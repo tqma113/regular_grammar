@@ -16,3 +16,7 @@ compound_re: repeat_re | simple_re;
 repeat_re: simple_re ['*'|'+'|'?'];
 simple_re: token | '(' regular_expression ')';
 ```
+
+```
+R -> 
+```
