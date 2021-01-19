@@ -1,5 +1,9 @@
 # Regular Expression
 
+TODO:
+
++ accept Expanded Regular Grammar
+
 ```
 regular_expressions -> compound_re* 
 compound_re -> repeat_re | simple_re 
