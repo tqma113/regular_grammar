@@ -1,4 +1,6 @@
-# Regular Expression
+# Regular Grammar
+
+A recognizer for strict Regular grammar.
 
 TODO:
 
