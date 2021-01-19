@@ -31,4 +31,11 @@ fn main() {
         ]
     );
     println!("{:?}", grammar);
+    let mut recognizer = regexp::Recognizer::new(&grammar);
+    match recognizer.recognize("abababq") {
+        Ok(_) => {
+            println!("Ok");
+        }
+        Err(unknown) => println!("Err: {:?}", unknown),
+    }
 }

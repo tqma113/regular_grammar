@@ -1,7 +1,7 @@
 use super::symbol::*;
 
-pub use std::collections::HashSet;
 use std::collections::HashMap;
+pub use std::collections::HashSet;
 
 #[macro_export]
 macro_rules! regular_grammar {
@@ -98,16 +98,18 @@ macro_rules! regular_grammar {
     };
 }
 
+pub enum Next {
+    Some(Symbol),
+    End,
+    None,
+}
+
 pub trait Grammar {
-    fn left(&self, first: Symbol, second: Symbol) -> Option<&HashSet<Symbol>>;
+    fn next(&self, base: Symbol, input: Symbol) -> Next;
 
-    fn first(&self, left: Symbol, second: Symbol) -> Option<&Symbol>;
+    fn start(&self) -> Symbol;
 
-    fn second(&self, left: Symbol, first: Symbol) -> Option<&Symbol>;
-
-    fn single_left(&self, right: Symbol) -> Option<&HashSet<Symbol>>;
-
-    fn single_right(&self, right: Symbol) -> Option<&HashSet<Symbol>>;
+    fn epsilon(&self) -> Symbol;
 
     fn exist(&self, symbol: Symbol) -> bool;
 
@@ -120,99 +122,63 @@ pub trait Grammar {
 pub struct TableKey(Symbol, Symbol);
 
 #[derive(Debug, Clone)]
-pub struct Table {
-    lefts: HashMap<TableKey, HashSet<Symbol>>,
-    firsts: HashMap<TableKey, Symbol>,
-    seconds: HashMap<TableKey, Symbol>,
+pub struct Table(HashMap<TableKey, Symbol>);
+
+impl Default for Table {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Table {
     pub fn new() -> Self {
-        Table {
-            lefts: HashMap::new(),
-            firsts: HashMap::new(),
-            seconds: HashMap::new()
-        }
+        Table(HashMap::new())
     }
 
-    pub fn insert(&mut self, left: Symbol, first: Symbol, second: Symbol) {
-        let left_key = TableKey(first, second);
-        match self.lefts.get(&left_key) {
-            Some(values) => {
-                let mut values = values.clone();
-                values.insert(left);
-                self.lefts.insert(left_key, values);
-            }
-            None => {
-                let mut values: HashSet<Symbol> = HashSet::new();
-                values.insert(left);
-                self.lefts.insert(left_key, values);
-            }
-        }
-        self.firsts.insert(TableKey(left, second), first);
-        self.seconds.insert(TableKey(left, first), second);
+    pub fn insert(&mut self, base: Symbol, input: Symbol, next: Symbol) -> Option<Symbol> {
+        self.0.insert(TableKey(base, input), next)
     }
 
-    fn left(&self, first: Symbol, second: Symbol) -> Option<&HashSet<Symbol>> {
-        self.lefts.get(&TableKey(first, second))
-    }
-
-    fn first(&self, left: Symbol, second: Symbol) -> Option<&Symbol> {
-        self.firsts.get(&TableKey(left, second))
-    }
-
-    fn second(&self, left: Symbol, first: Symbol) -> Option<&Symbol> {
-        self.seconds.get(&TableKey(left, first))
+    fn next(&self, base: Symbol, input: Symbol) -> Option<&Symbol> {
+        self.0.get(&TableKey(base, input))
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct Map {
-    lefts: HashMap<Symbol, HashSet<Symbol>>,
-    rights: HashMap<Symbol, HashSet<Symbol>>
+pub struct Map(HashMap<Symbol, HashSet<Symbol>>);
+
+impl Default for Map {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Map {
     pub fn new() -> Self {
-        Map {
-            lefts: HashMap::new(),
-            rights: HashMap::new()
+        Map(HashMap::new())
+    }
+
+    pub fn insert(&mut self, base: Symbol, input: Symbol) {
+        match self.0.get(&base) {
+            Some(values) => {
+                let mut values: HashSet<Symbol> = values.clone();
+                values.insert(input);
+                self.0.insert(base, values);
+            }
+            None => {
+                let mut values: HashSet<Symbol> = HashSet::new();
+                values.insert(input);
+                self.0.insert(base, values);
+            }
         }
     }
 
-    pub fn insert(&mut self, left: Symbol, right: Symbol) {
-        match self.lefts.get(&right) {
-            Some(values) => {
-                let mut values: HashSet<Symbol> = values.clone();
-                values.insert(left);
-                self.lefts.insert(right, values);
-            }
-            None => {
-                let mut values: HashSet<Symbol> = HashSet::new();
-                values.insert(left);
-                self.lefts.insert(right, values);
-            }
-        };
-        match self.rights.get(&left) {
-            Some(values) => {
-                let mut values: HashSet<Symbol> = values.clone();
-                values.insert(right);
-                self.rights.insert(left, values);
-            }
-            None => {
-                let mut values: HashSet<Symbol> = HashSet::new();
-                values.insert(right);
-                self.rights.insert(left, values);
-            }
-        };
-    }
-
-    fn left(&self, right: Symbol) -> Option<&HashSet<Symbol>> {
-        self.lefts.get(&right)
-    }
-
-    fn right(&self, left: Symbol) -> Option<&HashSet<Symbol>> {
-        self.rights.get(&left)
+    fn next(&self, base: Symbol, input: Symbol) -> bool {
+        if let Some(symbols) = self.0.get(&base) {
+            symbols.contains(&input)
+        } else {
+            false
+        }
     }
 }
 
@@ -223,7 +189,7 @@ pub struct Regular {
     terminals: HashSet<Symbol>,
     non_terminals: HashSet<Symbol>,
     table: Table,
-    map: Map
+    map: Map,
 }
 
 impl Regular {
@@ -233,7 +199,7 @@ impl Regular {
         terminals: HashSet<Symbol>,
         non_terminals: HashSet<Symbol>,
         table: Table,
-        map: Map
+        map: Map,
     ) -> Self {
         Regular {
             start,
@@ -241,30 +207,31 @@ impl Regular {
             terminals,
             non_terminals,
             table,
-            map
+            map,
         }
     }
 }
 
 impl Grammar for Regular {
-    fn left(&self, first: Symbol, second: Symbol) -> Option<&HashSet<Symbol>> {
-        self.table.left(first, second)
+    fn next(&self, base: Symbol, input: Symbol) -> Next {
+        match self.table.next(base, input) {
+            Some(symbol) => Next::Some(*symbol),
+            None => {
+                if self.map.next(base, input) {
+                    Next::End
+                } else {
+                    Next::None
+                }
+            }
+        }
     }
 
-    fn first(&self, left: Symbol, second: Symbol) -> Option<&Symbol> {
-        self.table.first(left, second)
+    fn start(&self) -> Symbol {
+        self.start
     }
 
-    fn second(&self, left: Symbol, first: Symbol) -> Option<&Symbol> {
-        self.table.second(left, first)
-    }
-
-    fn single_left(&self, right: Symbol) -> Option<&HashSet<Symbol>> {
-        self.map.left(right)
-    }
-
-    fn single_right(&self, left: Symbol) -> Option<&HashSet<Symbol>> {
-        self.map.right(left)
+    fn epsilon(&self) -> Symbol {
+        self.epsilon
     }
 
     fn exist(&self, symbol: Symbol) -> bool {
