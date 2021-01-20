@@ -1,5 +1,7 @@
 # Regular Grammar
 
+Detail in 5.3 in Parsing Technique.
+
 A recognizer for strict Regular grammar.
 
 TODO:
