@@ -4,6 +4,9 @@ Detail in 5.3 in Parsing Technique.
 
 A recognizer for strict Regular grammar.
 
+Time requirements: `O(n)`
+Memory requirements: `O(n)`
+
 TODO:
 
 + accept Expanded Regular Grammar
