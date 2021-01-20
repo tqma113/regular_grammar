@@ -48,6 +48,6 @@ fn main() {
         Ok(_) => {
             println!("Ok");
         }
-        Err(unknown) => println!("Err: {:?}", unknown),
+        Err(unknown) => println!("Err: {}", unknown),
     }
 }

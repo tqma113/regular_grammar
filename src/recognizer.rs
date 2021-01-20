@@ -55,7 +55,6 @@ impl<'a, G: Grammar + Debug + Clone> Recognizer<'a, G> {
                 None => NextState::Err(Diagnostic::Input(InputDiagnostic::new(
                     c,
                     self.index,
-                    format!("Unknown input:{} at {}", c, self.index),
                 ))),
             },
             None => self.next_state(self.grammar.epsilon()),
@@ -69,10 +68,6 @@ impl<'a, G: Grammar + Debug + Clone> Recognizer<'a, G> {
             Next::None => NextState::Err(Diagnostic::Rule(RuleDiagnostic::new(
                 self.state,
                 input,
-                format!(
-                    "Non-Productive Rules. Base: {}, input: {}",
-                    self.state, input
-                ),
             ))),
         }
     }
