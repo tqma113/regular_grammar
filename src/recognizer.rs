@@ -6,7 +6,7 @@ use std::fmt::Debug;
 use std::str::Chars;
 
 #[derive(Clone, Debug)]
-pub struct Recognizer<'a, G> {
+pub struct Recognizer<'a, G: Grammar + Debug + Clone> {
     grammar: &'a G,
     src: &'a str,
     chars: Chars<'a>,
