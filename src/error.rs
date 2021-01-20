@@ -1,6 +1,6 @@
 use std::fmt;
 
-use super::Symbol;
+use super::symbol::Symbol;
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Diagnostic {

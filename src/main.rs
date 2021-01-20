@@ -1,18 +1,20 @@
 extern crate regexp;
 
-use regexp::{regular_grammar};
+use regexp::regular_grammar;
 
 fn main() {
-    /// Detail in 5.3 and 5.4 in Parsing Technique.
-    /// S -> (ab)*(q|p)+
-    /// S -> A
-    /// A -> aB
-    /// B -> bA
-    /// A -> pC
-    /// A -> qC
-    /// C -> qC
-    /// C -> pC
-    /// C -> ε
+    /*
+    Detail in 5.3 and 5.4 in Parsing Technique.
+    S -> (ab)*(q|p)+
+    S -> A
+    A -> aB
+    B -> bA
+    A -> pC
+    A -> qC
+    C -> qC
+    C -> pC
+    C -> ε
+    */
     let grammar = regular_grammar!(
         Start("A");
         Epsilon("ε");
@@ -41,7 +43,7 @@ fn main() {
         ]
     );
     println!("{:?}", grammar);
-    let mut recognizer = regexp::Recognizer::new(&grammar);
+    let mut recognizer = regexp::recognizer::Recognizer::new(&grammar);
     match recognizer.recognize("abababq") {
         Ok(_) => {
             println!("Ok");
