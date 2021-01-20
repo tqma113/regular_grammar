@@ -203,7 +203,7 @@ impl RegularGrammar {
         table: Table,
         map: Map,
     ) -> Self {
-        RegularGrammar {
+        Self {
             start,
             epsilon,
             terminals,
